@@ -66,6 +66,13 @@ def init_db():
  )
  """)
  db.execute("INSERT OR IGNORE INTO treasury (id, balance) VALUES (1, 0)")
+ db.execute("""
+ CREATE TABLE IF NOT EXISTS treasury_deposits (
+ invoice_id TEXT PRIMARY KEY,
+ amount REAL,
+ paid INTEGER DEFAULT 0
+ )
+ """)
  db.commit()
 
 def add_bet(user_id, username, game, choice, amount, invoice_id):
@@ -108,6 +115,7 @@ async def create_invoice(amount: float, payload: str) -> dict:
  "asset": "USDT",
  "amount": str(round(amount, 2)),
  "payload": payload,
+
  "description": f"Казино ставка {amount} USDT",
  "allow_comments": False,
  "allow_anonymous": False,
@@ -500,6 +508,24 @@ async def check_payments():
  except Exception as e:
  logging.warning(f"Channel post error: {e}")
 
+ # Проверяем депозиты казны
+ pending_deps = db.execute("SELECT invoice_id, amount FROM treasury_deposits WHERE paid=0").fetchall()
+ for dep_inv_id, dep_amount in pending_deps:
+ for inv in paid_invoices:
+ if str(inv.get("invoice_id", "")) == dep_inv_id:
+ db.execute("UPDATE treasury_deposits SET paid=1 WHERE invoice_id=?", (dep_inv_id,))
+ db.commit()
+ update_treasury(dep_amount)
+ bal = get_treasury()
+ await bot.send_message(
+ ADMIN_ID,
+ f"✅ <b>Казна пополнена!</b>\n\n"
+ f"💵 Сумма: <b>+{dep_amount} USDT</b>\n"
+ f"💼 Новый баланс: <b>{round(bal, 2)} USDT</b>",
+ parse_mode="HTML"
+ )
+ break
+
  except Exception as e:
  logging.error(f"Payment check error: {e}")
 
@@ -554,7 +580,7 @@ async def admin_deposit_cb(call: types.CallbackQuery, state: FSMContext):
  return
  await state.set_state(AdminState.deposit_amount)
  await call.message.edit_text(
- "💰 Введи сумму для пополнения казны (USDT):",
+ "💰 Введи сумму пополнения казны (USDT):\n\nБудет создан счёт CryptoBot — после оплаты баланс казны пополнится автоматически.",
  reply_markup=InlineKeyboardMarkup(inline_keyboard=[
  [InlineKeyboardButton(text="❌ Отмена", callback_data="admin_back")]
  ])
@@ -566,14 +592,27 @@ async def admin_deposit_amount(message: types.Message, state: FSMContext):
  return
  try:
  amount = float(message.text.strip())
- update_treasury(amount)
+ if amount <= 0:
+ await message.answer("❌ Введи сумму больше 0.")
+ return
  await state.clear()
- balance = get_treasury()
+ invoice = await create_invoice(amount, f"treasury_deposit_{amount}")
+ if not invoice:
+ await message.answer("⚠️ Ошибка создания счёта. Попробуй позже.")
+ return
+ pay_url = invoice.get("pay_url", "")
+ inv_id = str(invoice.get("invoice_id", ""))
+ # Сохраняем ожидающий депозит казны в БД
+ db.execute("INSERT OR IGNORE INTO treasury_deposits (invoice_id, amount) VALUES (?,?)", (inv_id, amount))
+ db.commit()
  await message.answer(
- f"✅ Казна пополнена на <b>{amount} USDT</b>\n"
- f"💼 Новый баланс: <b>{round(balance, 2)} USDT</b>",
+ f"💰 Счёт на пополнение казны создан!\n\n"
+ f"💵 Сумма: <b>{amount} USDT</b>\n"
+ f"После оплаты баланс казны пополнится автоматически.",
  parse_mode="HTML",
- reply_markup=admin_keyboard()
+ reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+ [InlineKeyboardButton(text=f"💳 Оплатить {amount} USDT", url=pay_url)]
+ ])
  )
  except ValueError:
  await message.answer("❌ Введи корректную сумму.")
