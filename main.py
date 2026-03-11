@@ -115,11 +115,10 @@ async def create_check(amount: float) -> dict:
  return data.get("result", {})
 
 async def get_invoices() -> list:
- async with aiohttp.ClientSession() as s:
- r = await s.get(f"{CRYPTO_API}/getInvoices", headers={
- "Crypto-Pay-API-Token": CRYPTO_TOKEN
- }, params={"status": "paid"})
+ s = aiohttp.ClientSession()
+ r = await s.get(f"{CRYPTO_API}/getInvoices", headers={"Crypto-Pay-API-Token": CRYPTO_TOKEN}, params={"status": "paid"})
  data = await r.json()
+ await s.close()
  return data.get("result", {}).get("items", [])
 
 # ─────────────── FSM ───────────────
@@ -209,53 +208,40 @@ SLOT_DARTS = "🎯" # 1-6; 6 = яблочко
 def determine_win(game: str, choice: str, dice_value: int) -> bool:
  rnd = random.random()
  win_chance = WIN_CHANCES[game]
-
  if game == "dice":
- # Если угадал число И выпало везение
- if str(dice_value) == choice:
- return rnd < win_chance
- return False
-
+  if str(dice_value) == choice:
+   return rnd < win_chance
+  return False
  elif game == "evenodd":
- is_even = dice_value % 2 == 0
- user_picked_even = choice == "even"
- if is_even == user_picked_even:
- return rnd < win_chance
- return False
-
+  is_even = dice_value % 2 == 0
+  user_picked_even = choice == "even"
+  if is_even == user_picked_even:
+   return rnd < win_chance
+  return False
  elif game == "basketball":
- # В Telegram: 🏀 значение 4 или 5 = попадание
- did_score = dice_value in [4, 5]
- user_said_yes = choice == "yes"
- if did_score == user_said_yes:
- return rnd < win_chance
- return False
-
+  did_score = dice_value in [4, 5]
+  user_said_yes = choice == "yes"
+  if did_score == user_said_yes:
+   return rnd < win_chance
+  return False
  elif game == "football":
- # В Telegram: ⚽ значение 3,4,5 = гол
- did_score = dice_value in [3, 4, 5]
- user_said_yes = choice == "yes"
- if did_score == user_said_yes:
- return rnd < win_chance
- return False
-
+  did_score = dice_value in [3, 4, 5]
+  user_said_yes = choice == "yes"
+  if did_score == user_said_yes:
+   return rnd < win_chance
+  return False
  elif game == "darts":
- # В Telegram: 🎯 значение 6 = яблочко
- bullseye = dice_value == 6
- user_said_yes = choice == "yes"
- if bullseye == user_said_yes:
- return rnd < win_chance
- return False
-
+  bullseye = dice_value == 6
+  user_said_yes = choice == "yes"
+  if bullseye == user_said_yes:
+   return rnd < win_chance
+  return False
  return False
 
 def format_choice(game, choice):
- labels = {
- "even": "Чётное", "odd": "Нечётное",
- "yes": "Да", "no": "Нет",
- }
+ labels = {"even": "Чётное", "odd": "Нечётное", "yes": "Да", "no": "Нет"}
  if game == "dice":
- return f"Число {choice}"
+  return f"Число {choice}"
  return labels.get(choice, choice)
 
 # ─────────────── ИНИЦИАЛИЗАЦИЯ ───────────────
