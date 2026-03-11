@@ -1,2 +1,2 @@
-aiogram==3.7.0
-aiohttp==3.9.5
+pyTelegramBotAPI==4.14.0
+cryptopy-telegram==1.0.0
