@@ -15,7 +15,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 BOT_TOKEN = "8325669732:AAGFvmLJMbAOilhKWElk43LG-FksHJpCfNk"
 CRYPTO_TOKEN = "545475:AALkj6ssx8n0hVc2LR2ouWSat2YpoLCFUow"
 ADMIN_ID = 7921743592
-CHANNEL_ID = "@your_channel" # ← замени на @username твоего канала или -100xxxxx
+CHANNEL_ID = "-1003842490996" # ← замени на @username твоего канала или -100xxxxx
 
 CRYPTO_API = "https://pay.crypt.bot/api"
 MIN_BET = 0.10
@@ -280,9 +280,9 @@ dp = Dispatcher(storage=MemoryStorage())
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
  await message.answer(
- "🎰 <b>Добро пожаловать в Казино!</b>\n\n"
- "Выбери игру, поставь от <b>0.10 до 10 USDT</b> и испытай удачу!\n\n"
- "Оплата через <b>CryptoBot</b>. После оплаты — ставка уходит в канал.\n"
+ "🎰 <b>Добро пожаловать в WinBet</b>\n\n"
+ "Выбери игру</b> и испытай удачу!\n\n"
+ "Оплата через <b>CryptoBot</b>.\n"
  "При выигрыше получаешь чек прямо в бот! 🤑\n\n"
  "👇 Нажми кнопку ниже, чтобы начать:",
  parse_mode="HTML",
