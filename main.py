@@ -18,7 +18,7 @@ ADMIN_ID = 7921743592
 CHANNEL_ID = "-1003842490996" # ← замени на @username твоего канала или -100xxxxx
 
 CRYPTO_API = "https://pay.crypt.bot/api"
-MIN_BET = 0.10
+MIN_BET = 0.03
 MAX_BET = 10.0
 
 # Шансы на победу (занижены)
